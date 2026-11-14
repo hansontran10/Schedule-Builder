@@ -22,11 +22,13 @@ live by a student yet. ECU is turned on at its Banner 9 address (banprod-reg.ecu
      Submit. If the school's Add button can't be found for a section, it only adds it to the calendar
      and says so.
    - On **Browse Classes**, Add (or "Add all sections") just adds to the calendar and planner.
-2. **In the planner** (a full page inside the extension), **Find a class** lets you type a class like
-   `ACC 201` and lists every section the school offers that term (days, times, room, instructor,
-   seats, CRN). Tick the ones you'd take and add them; no CRN hunting. The search runs through your
-   open, logged-in Register for Classes tab, using the same search the school's Find Classes page
-   uses, so it needs that tab open. It only reads listings. The classes you added are combined into
+2. **In the planner** (a full page inside the extension), **Find a class** takes a subject or a class.
+   Type `MATH` (or `mathematics`) to browse every class in the subject in a scrolling list, with a
+   filter box to narrow by number or title; type `MATH 0001` to go straight to one class. Each
+   section shows days, times, room, instructor, seats and CRN; tick the ones you'd take and add them.
+   If what you typed matches several subjects, you pick one. The search runs through your open,
+   logged-in Register for Classes tab, using the school's own search, and only reads listings.
+   The classes you added are combined into
    every schedule that fits, ranked by what you care about, on a weekly calendar.
 3. **Already registered?** On the school's Registration page, **Show in my planner** brings the classes
    you're registered for into the planner, so you can see your current schedule in the weekly view.
@@ -91,7 +93,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 133 tests
+npm test          # 140 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```

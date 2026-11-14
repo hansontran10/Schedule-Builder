@@ -8,7 +8,9 @@ export interface SchoolTabMessage { type: "school-tab"; school: string }
 export interface SearchSectionsMessage { type: "search-sections"; query: string }
 
 export type SearchReply =
-  | { ok: true; school: string; courses: Course[]; skipped: string[]; total: number }
+  | { ok: true; school: string; courses: Course[]; skipped: string[]; total: number;
+      /** Set when what was typed matches several subjects: the student picks one. */
+      subjects?: Array<{ code: string; name: string }>; number?: string }
   | { ok: false; error: string };
 
 export const NO_SCHOOL_TAB =

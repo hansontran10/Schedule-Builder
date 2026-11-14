@@ -89,3 +89,8 @@ input[type=range] { accent-color: var(--brand); }
 .left-out { margin: 8px 0 12px; padding: 10px 12px; border-left: 4px solid var(--error); background: color-mix(in srgb, var(--error) 8%, white); border-radius: 8px; }
 .left-out ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
 .left-out li { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.search-scroll { max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px 8px; margin: 8px 0; }
+.search-scroll details.course:first-child, .search-scroll .course:first-child { border-top: 0; margin-top: 4px; }
+.search-scroll summary { cursor: pointer; }
+.subject-choices { list-style: none; margin: 6px 0; display: grid; gap: 6px; padding-top: 8px; }
+.subject-choices button { width: 100%; text-align: left; }

@@ -38,10 +38,34 @@ export interface BannerSearchResponse {
   data?: BannerSection[] | null;
 }
 
-/** "ACC201", "acc 201", "ACC-201", "acc" -> { subject: "ACC", number: "201" | "" } */
+/**
+ * "ACC201", "acc 201", "ACC-201" -> a class; "acc" or "art history" -> a whole subject.
+ * `subject` is what the student typed for the subject: a code (MATH) or part of its name (mathematics).
+ */
 export function parseClassQuery(input: string): { subject: string; number: string } | null {
-  const m = input.trim().toUpperCase().match(/^([A-Z]{2,5})[\s-]*([0-9]{2,4}[A-Z]?)?$/);
+  const m = input.trim().toUpperCase().replace(/\s+/g, " ").match(/^([A-Z][A-Z &/]*[A-Z])[\s-]*([0-9]{2,4}[A-Z]?)?$/);
   return m ? { subject: m[1]!, number: m[2] ?? "" } : null;
+}
+
+/** Could this be a subject code as the school writes it (MATH, ENGL, CSC)? */
+export const looksLikeSubjectCode = (text: string) => /^[A-Z]{2,5}$/.test(text);
+
+export interface SubjectChoice { code: string; name: string }
+
+/** Banner's own subject lookup, used by the Subject box on the school's search page. */
+export function subjectsUrl(origin: string, term: string, text: string): string {
+  const p = new URLSearchParams({ searchTerm: text, term, offset: "1", max: "50" });
+  return `${origin}/StudentRegistrationSsb/ssb/classSearch/get_subject?${p}`;
+}
+
+export function subjectsFromBanner(body: unknown): SubjectChoice[] {
+  if (!Array.isArray(body)) return [];
+  const out: SubjectChoice[] = [];
+  for (const item of body as Array<{ code?: unknown; description?: unknown }>) {
+    if (typeof item?.code !== "string" || !item.code.trim()) continue;
+    out.push({ code: item.code.trim(), name: typeof item.description === "string" ? decodeEntities(item.description).trim() : item.code.trim() });
+  }
+  return out;
 }
 
 const DAY_FIELDS: Array<[keyof BannerMeetingTime, Day]> = [

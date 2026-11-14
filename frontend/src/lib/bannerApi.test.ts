@@ -16,7 +16,8 @@ describe("parseClassQuery", () => {
   it.each([
     ["ACC201", { subject: "ACC", number: "201" }], ["acc 201", { subject: "ACC", number: "201" }],
     ["ACC-201", { subject: "ACC", number: "201" }], ["bio 241l", { subject: "BIO", number: "241L" }],
-    ["csc", { subject: "CSC", number: "" }],
+    ["csc", { subject: "CSC", number: "" }], ["Art  History 2000", { subject: "ART HISTORY", number: "2000" }],
+    ["mathematics", { subject: "MATHEMATICS", number: "" }], ["MATH0001", { subject: "MATH", number: "0001" }],
   ])("%s", (input, expected) => expect(parseClassQuery(input)).toEqual(expected));
   it.each(["", "201", "accounting 201 now", "A 201"])("rejects %s", (input) => expect(parseClassQuery(input)).toBeNull());
 });

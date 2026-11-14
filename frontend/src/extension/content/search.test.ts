@@ -52,13 +52,50 @@ describe("searchSections", () => {
     expect(r.ok && r.courses.map((c) => c.code)).toEqual(["ACC 201"]);
   });
 
-  it.each([
-    ["bad query", "201", undefined, /Type a class/],
-    ["no number", "ACC", undefined, /course number/],
-  ])("%s", async (_n, q, _x, msg) => {
-    const r = await searchSections(q, "uncg", page(), vi.fn());
-    expect(r.ok).toBe(false);
-    expect(!r.ok && r.error).toMatch(msg);
+  it("rejects something that isn't a subject or class", async () => {
+    const r = await searchSections("201", "uncg", page(), vi.fn());
+    expect(!r.ok && r.error).toMatch(/Type a subject/);
+  });
+
+  it("a subject alone lists every class in it, in order", async () => {
+    const f = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response("{}"))
+      .mockResolvedValueOnce(json({ success: true, totalCount: 3, data: [row("3", "01", "330"), row("1", "01", "201"), row("2", "02", "201")] }));
+    const r = await searchSections("acc", "uncg", page(), f);
+    expect(r.ok && r.courses.map((c) => [c.code, c.sections.length])).toEqual([["ACC 201", 2], ["ACC 330", 1]]);
+    expect(new URL(String(f.mock.calls[1]![0])).searchParams.get("txt_courseNumber")).toBe("");
+  });
+
+  it("looks up a subject by name and searches its code", async () => {
+    const f = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(json([{ code: "MATH", description: "Mathematics" }])) // get_subject
+      .mockResolvedValueOnce(new Response("{}"))
+      .mockResolvedValueOnce(json({ success: true, totalCount: 1, data: [{ ...row("9", "001", "0001"), subject: "MATH" }] }));
+    const r = await searchSections("mathematics 0001", "ecu", page(), f);
+    expect(String(f.mock.calls[0]![0])).toContain("/classSearch/get_subject?searchTerm=MATHEMATICS&term=202701");
+    expect(r.ok && r.courses.map((c) => c.code)).toEqual(["MATH 0001"]);
+  });
+
+  it("falls back to the subject list when a typed code finds nothing (MAT -> MATH)", async () => {
+    const f = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("{}")).mockResolvedValueOnce(json({ success: true, totalCount: 0, data: [] }))
+      .mockResolvedValueOnce(json([{ code: "MATH", description: "Mathematics" }]))
+      .mockResolvedValueOnce(new Response("{}"))
+      .mockResolvedValueOnce(json({ success: true, totalCount: 1, data: [{ ...row("9", "001", "0001"), subject: "MATH" }] }));
+    const r = await searchSections("MAT", "ecu", page(), f);
+    expect(r.ok && r.courses.map((c) => c.code)).toEqual(["MATH 0001"]);
+  });
+
+  it("offers the choices when several subjects match", async () => {
+    const f = vi.fn<typeof fetch>().mockResolvedValueOnce(json([
+      { code: "ART", description: "Art" }, { code: "ARTH", description: "Art History &amp; Appreciation" },
+    ]));
+    const r = await searchSections("art h 2000", "ecu", page(), f);
+    expect(r).toMatchObject({ ok: true, courses: [], number: "2000", subjects: [{ code: "ART", name: "Art" }, { code: "ARTH", name: "Art History & Appreciation" }] });
+  });
+
+  it("returns nothing, without failing, when the subject list can't be read", async () => {
+    const f = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response("<html>", { status: 404 }));
+    expect(await searchSections("underwater basket weaving", "ecu", page(), f)).toMatchObject({ ok: true, courses: [] });
   });
 
   it("explains a missing term, a logged-out tab, a refusal and a network failure", async () => {
