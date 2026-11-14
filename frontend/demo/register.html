@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Demo University - Register for Classes (fake test page)</title>
+<style>
+  body { font-family: Verdana, Arial, sans-serif; font-size: 11px; margin: 8px; }
+  .banner { background: #003366; color: #fff; padding: 6px 10px; font-weight: bold; }
+  .notice { background: #ffffcc; border: 1px solid #cc9; padding: 6px; margin: 8px 0; }
+  .crn-row { margin: 4px 0; }
+  #summary { margin-top: 12px; border: 1px solid #999; padding: 6px; min-height: 30px; }
+</style>
+</head>
+<body>
+<div class="banner">Demo University Student Self-Service :: Register for Classes :: Spring 2027</div>
+<div class="notice">This is a made-up page for testing the Schedule Builder extension. Nothing here registers anyone for anything.</div>
+<p><a href="register.html">Register for Classes</a> | <a href="browse.html">Browse Classes</a></p>
+<div id="enterCrns">
+  <b>Enter CRNs</b>
+  <div id="crnRows"><div class="crn-row">CRN <input class="crn-input" type="text" size="8" /></div></div>
+  <button id="addAnotherCrn" type="button">+ Add Another CRN</button>
+  <button id="addToSummary" type="button">Add to Summary</button>
+</div>
+<div id="summary"><i>Summary is empty.</i></div>
+<button id="submitRegistration" type="button">Submit</button>
+<p id="submitted"></p>
+<script>
+  // Tracks values the way a framework would: only from input events, never by reading .value later.
+  var tracked = new Map();
+  function watch(input) { input.addEventListener("input", function () { tracked.set(input, input.value); }); }
+  document.querySelectorAll(".crn-input").forEach(watch);
+  document.getElementById("addAnotherCrn").onclick = function () {
+    var row = document.createElement("div");
+    row.className = "crn-row";
+    row.innerHTML = 'CRN <input class="crn-input" type="text" size="8" />';
+    document.getElementById("crnRows").appendChild(row);
+    watch(row.querySelector("input"));
+  };
+  document.getElementById("addToSummary").onclick = function () {
+    var crns = Array.from(tracked.values()).filter(Boolean);
+    document.getElementById("summary").textContent = crns.length ? "Pending: " + crns.join(", ") : "Summary is empty.";
+  };
+  document.getElementById("submitRegistration").onclick = function () {
+    document.getElementById("submitted").textContent = "SUBMITTED: " + document.getElementById("summary").textContent;
+  };
+</script>
+</body>
+</html>
