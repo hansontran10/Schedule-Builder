@@ -26,20 +26,60 @@ async function setSchoolTabs(ids: number[]): Promise<void> {
   await chrome.storage.session.set({ [TABS_KEY]: ids.slice(-10) });
 }
 
-/** Ask the newest school tab first; a tab that was closed or navigated away just doesn't answer. */
-async function search(message: SearchSectionsMessage): Promise<SearchReply> {
-  const ids = await schoolTabs();
-  for (const id of [...ids].reverse()) {
-    try {
-      const reply = (await chrome.tabs.sendMessage(id, message)) as SearchReply | undefined;
-      if (reply) return reply;
-    } catch {
-      // gone
-    }
-    await setSchoolTabs((await schoolTabs()).filter((x) => x !== id));
-  }
-  return { ok: false, error: NO_SCHOOL_TAB };
+// The schools' registration pages (same list as content_scripts in manifest.json).
+const SCHOOL_PAGES = (chrome.runtime.getManifest().content_scripts?.[0]?.matches ?? []).filter((m) => m.startsWith("https://"));
+
+/** Start the extension in a school tab that was opened before it was installed or updated. */
+async function inject(tabId: number): Promise<void> {
+  await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+  await new Promise((r) => setTimeout(r, 300)); // let it set up its message listener
 }
+
+async function ask(tabId: number, message: SearchSectionsMessage): Promise<SearchReply | undefined> {
+  try {
+    return (await chrome.tabs.sendMessage(tabId, message)) as SearchReply | undefined;
+  } catch {
+    return undefined; // nothing listening in that tab
+  }
+}
+
+/** Find an open school registration tab (newest first) and run the search there. */
+async function search(message: SearchSectionsMessage): Promise<SearchReply> {
+  const registered = await schoolTabs();
+  const open = SCHOOL_PAGES.length ? await chrome.tabs.query({ url: SCHOOL_PAGES }) : [];
+  open.sort((a, b) => (b.lastAccessed ?? 0) - (a.lastAccessed ?? 0));
+  const ids = [...new Set([...[...registered].reverse(), ...open.map((t) => t.id).filter((id): id is number => id !== undefined)])];
+  const problems: string[] = [];
+  for (const id of ids) {
+    let reply = await ask(id, message);
+    if (!reply && open.some((t) => t.id === id)) {
+      try {
+        await inject(id);
+        reply = await ask(id, message);
+        if (!reply) problems.push("started there but got no answer");
+      } catch (e) {
+        problems.push(`couldn't start there: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+    if (reply) return reply;
+  }
+  // Details for troubleshooting: what Chrome reports, never page content.
+  const details = [
+    `version ${chrome.runtime.getManifest().version}`,
+    `${open.length} registration tab${open.length === 1 ? "" : "s"} found`,
+    ...open.slice(0, 3).map((t) => `tab address: ${t.url ? new URL(t.url).host + new URL(t.url).pathname : "(hidden)"}`),
+    ...problems,
+  ];
+  return { ok: false, error: `${NO_SCHOOL_TAB} [${details.join("; ")}]` };
+}
+
+// After installing or updating, start in school tabs that are already open, so nobody has to refresh.
+chrome.runtime.onInstalled.addListener(() => {
+  if (!SCHOOL_PAGES.length) return;
+  void chrome.tabs.query({ url: SCHOOL_PAGES }).then((tabs) => {
+    for (const t of tabs) if (t.id !== undefined) void inject(t.id).catch(() => undefined);
+  });
+});
 
 chrome.action.onClicked.addListener(() => void openPlanner());
 

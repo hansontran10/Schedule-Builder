@@ -190,8 +190,15 @@ function listenForSearches(school: string): void {
   });
 }
 
+// The background worker may inject this script into a tab that already has it (for example a tab
+// opened before the extension was updated). Run only once per live copy of the extension; a copy
+// left over from before an update reports itself dead, so the new one takes over.
+const flagged = window as unknown as { __scheduleBuilderAlive?: () => boolean };
+const alreadyRunning = flagged.__scheduleBuilderAlive?.() ?? false;
+if (!alreadyRunning) flagged.__scheduleBuilderAlive = () => { try { return !!chrome.runtime?.id; } catch { return false; } };
+
 const url = new URL(location.href);
-const adapter = adapterFor(url);
+const adapter = alreadyRunning ? undefined : adapterFor(url);
 if (adapter) {
   void detectTheme(url, adapter).then((theme) => {
     // Remember it so the planner tab uses the same colors.

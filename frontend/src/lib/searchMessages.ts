@@ -12,7 +12,8 @@ export type SearchReply =
   | { ok: false; error: string };
 
 export const NO_SCHOOL_TAB =
-  "Open your school's Register for Classes page in another tab (and log in), pick the term, then search again.";
+  "Can't reach your school's Register for Classes page. Open it in another tab (logged in, term picked). " +
+  "If it's already open, refresh that tab (press F5), then search again.";
 
 export function isMessage<T extends { type: string }>(m: unknown, type: T["type"]): m is T {
   return typeof m === "object" && m !== null && (m as { type?: unknown }).type === type;
