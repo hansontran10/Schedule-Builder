@@ -4,9 +4,9 @@ A browser extension that puts a cleaner class search and a weekly schedule plann
 school's older registration pages. Built for friends at UNCW, UNCG and ECU, modeled on how
 schedule planning feels at NC State.
 
-**Status:** UNCG is supported, built and tested against saved copies of UNCG's real Banner 9 pages
-(class search, registration, and the registered-classes calendar). It has not yet been used live by a
-UNCG student. UNCW and ECU also run Banner, but their pages haven't been checked yet.
+**Status:** UNCG and UNCW are supported, built and tested against saved copies of each school's real
+Banner 9 pages (class search, registration, and the registered-classes calendar). Neither has been used
+live by a student yet. ECU also runs Banner, but its pages haven't been checked yet.
 
 ![The planner in ECU colors showing a ranked weekly schedule](docs/screenshot.png)
 
@@ -36,9 +36,12 @@ never contacts any server, and keeps your classes in your own browser.
 Note: UNCW (Schedule Wizard), UNCG (Schedule Hero) and ECU (Schedule Planner) have official planners.
 This is a personal project and is not affiliated with or endorsed by any school.
 
-## UNCG details
+## UNCG and UNCW details
 
-- Reads UNCG's Browse Classes results (`erp-registration.uncg.edu/StudentRegistrationSsb/.../classSearch`):
+Both schools run Ellucian Banner 9, so one reader (`adapters/banner9.ts`) handles both:
+UNCG at `erp-registration.uncg.edu`, UNCW at `registration.uncw.edu`.
+
+- Reads the Browse Classes results (`/StudentRegistrationSsb/ssb/classSearch`):
   subject code, number, section, CRN, days, times, building and room, instructor, seats, and each
   section's own start and end dates.
 - **Half-semester classes:** two classes at the same time in different halves of the term don't conflict.
@@ -47,9 +50,10 @@ This is a personal project and is not affiliated with or endorsed by any school.
 - Banner shows 10 results per page by default; the extension reads the page that's showing and says so.
 - Registered classes come from the Registration page's summary and calendar. The calendar has no AM/PM,
   so times are inferred (1-7 = PM, 8-11 = AM) and checked against each block's position on the calendar.
+  (UNCG draws 42 px per hour and UNCW about 41.5; the check compares blocks to each other, so either works.)
 
-Test pages in `frontend/src/extension/content/adapters/fixtures/` are trimmed from real UNCG pages with
-the student's name, email and classes removed or replaced.
+Test pages in `frontend/src/extension/content/adapters/fixtures/` are trimmed from real UNCG and UNCW
+pages with the students' names, emails and classes removed or replaced, and instructor emails removed.
 
 ## Planner features
 
@@ -75,7 +79,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 84 tests
+npm test          # 88 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```
@@ -111,7 +115,7 @@ TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
 
 ## Not built yet
 
-- UNCW and ECU (waiting on saved pages; both use Banner, so the UNCG reader may mostly carry over)
+- ECU (waiting on saved pages; it uses Banner, so the same reader will likely work)
 - Banner's linked sections (a lecture that requires a specific lab)
 - Locking a section you must have
 - Comparing two schedules side by side
