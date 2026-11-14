@@ -118,6 +118,12 @@ function readResults(doc: Document): SearchResults | null {
   if (!table) return null;
 
   const codes = subjectCodes(doc);
+  const chosen = (doc.querySelector<HTMLInputElement>("#txt_subject")?.value ?? "").split(",").map((c) => c.trim()).filter(Boolean);
+  const onlyCode = chosen.length === 1 ? chosen[0]! : "";
+  // ECU shows the code in a column headed "Subject"; find it by its heading, whatever it's called inside.
+  const subjectColumn = [...table.querySelectorAll("th[data-property]")]
+    .find((th) => /^subject$/i.test(text(th)) && th.getAttribute("data-property") !== "subjectDescription")
+    ?.getAttribute("data-property") ?? null;
   const byCode = new Map<string, Course>();
   const skipped: string[] = [];
   const schoolAdd = new Map<string, HTMLElement>();
@@ -126,7 +132,9 @@ function readResults(doc: Document): SearchResults | null {
     const crn = text(cell("courseReferenceNumber"));
     if (!crn) continue;
     const subjectName = text(cell("subjectDescription"));
-    const subject = codes.get(subjectName) ?? subjectName;
+    // Schools show the subject differently: a code column, the long name (mapped to its code via the
+    // search form), or nothing at all. With nothing in the row, one chosen subject must be it.
+    const subject = text(cell("subject")) || (subjectColumn ? text(cell(subjectColumn)) : "") || codes.get(subjectName) || subjectName || onlyCode;
     const code = `${subject} ${text(cell("courseNumber"))}`.trim();
     const label = text(cell("sequenceNumber"));
 
@@ -196,6 +204,22 @@ function crnForm(doc: Document): CrnForm | null {
 export function resolveClock(hour: number, minute: number): number {
   const h24 = hour === 12 ? 12 : hour >= 1 && hour <= 7 ? hour + 12 : hour;
   return h24 * 60 + minute;
+}
+
+/** Every class in the school's Summary panel that hasn't been dropped: pending ones and registered ones. */
+function summaryCrns(doc: Document): Set<string> | null {
+  if (!onPage(doc, "/classRegistration/")) return null;
+  const table = [...doc.querySelectorAll<HTMLTableElement>("table")].find(
+    (t) => t.querySelector('th[data-property="subjectCourseSectionNumber"]') && t.querySelector('th[data-property="courseReferenceNumber"]'),
+  );
+  if (!table) return null;
+  const crns = new Set<string>();
+  for (const row of table.querySelectorAll<HTMLTableRowElement>("tbody tr")) {
+    const crn = text(row.querySelector('td[data-property="courseReferenceNumber"]'));
+    const status = text(row.querySelector('td[data-property="status"]'));
+    if (crn && !/deleted|dropped|removed|withdraw/i.test(status)) crns.add(crn);
+  }
+  return crns;
 }
 
 function readRegistered(doc: Document): RegisteredSchedule | null {
@@ -276,5 +300,6 @@ export function banner9Adapter(config: { id: string; name: string; domain: strin
     readResults,
     crnForm,
     readRegistered,
+    summaryCrns,
   };
 }

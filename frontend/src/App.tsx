@@ -8,7 +8,7 @@ import { PreferencesPanel } from "./components/PreferencesPanel";
 import { Results } from "./components/Results";
 import { exampleBlocks, exampleCourses } from "./lib/example";
 import { SCHOOLS, SCHOOL_KEY, themeById, themeVars } from "./lib/schools";
-import { solve } from "./lib/solver";
+import { solveBestEffort } from "./lib/bestEffort";
 import { EMPTY_STATE, PENDING_KEY, STATE_KEY, getStore, isExtension, normalizeState, type PendingCrns, type SavedState } from "./lib/storage";
 
 const store = getStore();
@@ -58,7 +58,7 @@ export default function App() {
     void store.set(STATE_KEY, state);
   }, [state, loaded]);
 
-  const result = useMemo(() => solve(state.courses, state.blocks, state.prefs), [state.courses, state.blocks, state.prefs]);
+  const { result, leftOut } = useMemo(() => solveBestEffort(state.courses, state.blocks, state.prefs), [state.courses, state.blocks, state.prefs]);
   const set = (patch: Partial<SavedState>) => setState((s) => ({ ...s, ...patch }));
 
   async function sendCrns(crns: string[]): Promise<string> {
@@ -107,7 +107,9 @@ export default function App() {
           <PreferencesPanel prefs={state.prefs} onChange={(prefs) => set({ prefs })} />
         </div>
         <div className="right">
-          <Results result={result} blocks={state.blocks} termStart={state.termStart} termEnd={state.termEnd}
+          <Results result={result} leftOut={leftOut}
+            onRemoveCourse={(id) => setState((s) => ({ ...s, courses: s.courses.filter((c) => c.id !== id) }))}
+            blocks={state.blocks} termStart={state.termStart} termEnd={state.termEnd}
             onTermChange={(termStart, termEnd) => set({ termStart, termEnd })}
             onSendCrns={isExtension() ? sendCrns : undefined} />
         </div>

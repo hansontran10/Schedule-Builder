@@ -68,6 +68,10 @@ export function CourseEditor({ courses, onChange }: { courses: Course[]; onChang
         <div key={c.id} className="course">
           <div className="course-head">
             <strong>{c.code}</strong>{c.title && <span className="muted"> {c.title}</span>}
+            <button type="button" className="link" onClick={() => {
+              const name = prompt("Class code (like MATH 0001):", c.code)?.trim().toUpperCase();
+              if (name) update(c.id, (x) => ({ ...x, code: name }));
+            }}>Rename</button>
             <button type="button" className="link" onClick={() => onChange(courses.filter((x) => x.id !== c.id))}>Remove class</button>
           </div>
           {c.sections.length === 0 && <p className="muted small">No sections yet.</p>}

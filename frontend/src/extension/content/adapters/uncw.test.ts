@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { adapterFor } from ".";
 import { fillCrns } from "../crnFill";
 
@@ -95,3 +95,31 @@ it.each([
   "https://notecu.edu/StudentRegistrationSsb/x",
   "http://banprod-reg.ecu.edu/StudentRegistrationSsb/x",
 ])("not %s", (address) => expect(adapterFor(new URL(address))).toBeUndefined());
+
+describe("subject code when the row doesn't show it", () => {
+  const FIND = `${BASE}/classRegistration/classRegistration`;
+  function rowsWith(setup: (doc: Document) => void) {
+    open("uncw-find-classes.html", "/classRegistration/classRegistration");
+    setup(document);
+    return adapterFor(new URL(FIND))!.readResults(document)!.courses.map((c) => c.code);
+  }
+  it("uses a subject code column if the school has one", () => {
+    expect(rowsWith((d) => d.querySelectorAll('td[data-property="subjectDescription"]').forEach((td) => {
+      td.setAttribute("data-property", "subject"); td.textContent = "MATH";
+    }))).toEqual(["MATH 241"]);
+  });
+  it("finds a column headed Subject, whatever its internal name (ECU)", () => {
+    expect(rowsWith((d) => {
+      d.querySelectorAll('[data-property="subjectDescription"]').forEach((el) => {
+        el.setAttribute("data-property", "subjectCode");
+        el.textContent = el.tagName === "TH" ? "Subject" : "MATH";
+      });
+    })).toEqual(["MATH 241"]);
+  });
+  it("falls back to the one subject that was searched", () => {
+    expect(rowsWith((d) => {
+      d.querySelectorAll('td[data-property="subjectDescription"]').forEach((td) => td.remove());
+      d.querySelectorAll("#s2id_txt_subject li.select2-search-choice").forEach((li) => li.remove());
+    })).toEqual(["BIO 241"]);
+  });
+});

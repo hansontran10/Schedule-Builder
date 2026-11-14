@@ -48,4 +48,6 @@ export interface SchoolAdapter {
   crnForm(doc: Document): CrnForm | null;
   /** The student's current registered classes, if this page shows them. */
   readRegistered?(doc: Document): RegisteredSchedule | null;
+  /** CRNs currently in the school's registration summary (pending or registered), or null if it isn't on the page. */
+  summaryCrns?(doc: Document): Set<string> | null;
 }

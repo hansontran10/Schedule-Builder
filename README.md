@@ -71,7 +71,8 @@ pages with the students' names, emails and classes removed or replaced, and inst
 - **Every conflict-free schedule**, found with a backtracking search (details below).
 - **Rules** that are never broken: busy times (work, practice), days off, no class before or after a time.
 - **Ranking** by long gaps between classes, days on campus, early mornings and late evenings.
-- **Explains empty results**: which class has no usable section and why, or which two classes always overlap.
+- **A class that doesn't fit never blanks the calendar**: the rest of the schedule stays, and the class is listed with the reason (for example "overlaps ART 2210") and a Remove button.
+- **Stays in step with the school**: a class taken out of the school's registration summary (removed before submitting, or dropped) comes off the planner too.
 - **Weekly calendar**, **Copy CRNs**, and **.ics export** for Google Calendar, Apple Calendar or Outlook.
 
 ## How the search works
@@ -90,7 +91,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 117 tests
+npm test          # 133 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```

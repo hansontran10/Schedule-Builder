@@ -16,6 +16,9 @@ export interface PendingCrns {
 
 export const STATE_KEY = "schedule-builder:v1";
 export const PENDING_KEY = "schedule-builder:pending-crns";
+/** CRNs of planner classes that were seen in the school's registration summary, per term. */
+export const IN_SCHOOL_KEY = "schedule-builder:in-school";
+export interface InSchool { term: string; crns: string[] }
 
 export const EMPTY_STATE: SavedState = { courses: [], blocks: [], prefs: DEFAULT_PREFERENCES, termStart: "", termEnd: "" };
 

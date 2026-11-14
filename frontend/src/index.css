@@ -86,3 +86,6 @@ th { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 input[type=range] { accent-color: var(--brand); }
 .school-tag { font-weight: 400; opacity: 0.9; }
 .search-results label { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; cursor: pointer; }
+.left-out { margin: 8px 0 12px; padding: 10px 12px; border-left: 4px solid var(--error); background: color-mix(in srgb, var(--error) 8%, white); border-radius: 8px; }
+.left-out ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+.left-out li { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }

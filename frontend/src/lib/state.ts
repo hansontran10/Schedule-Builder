@@ -23,6 +23,23 @@ export function mergeCourses(existing: Course[], incoming: Course[]): Course[] {
   return result;
 }
 
+/** Take sections with these CRNs out of the planner; a class left with no sections goes too. */
+export function removeSections(courses: Course[], crns: Iterable<string>): { courses: Course[]; removed: string[] } {
+  const gone = new Set(crns);
+  const removed: string[] = [];
+  const result: Course[] = [];
+  for (const c of courses) {
+    const sections = c.sections.filter((s) => {
+      const drop = !!s.crn && gone.has(s.crn);
+      if (drop) removed.push(`${c.code} ${s.label}`);
+      return !drop;
+    });
+    if (sections.length === c.sections.length) result.push(c);
+    else if (sections.length > 0) result.push({ ...c, sections });
+  }
+  return { courses: result, removed };
+}
+
 export function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }

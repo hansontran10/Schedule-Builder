@@ -1,13 +1,13 @@
 import { rejectionReason, sectionsConflict } from "../../lib/conflicts";
-import { solve } from "../../lib/solver";
-import { mergeCourses, normalizeCode } from "../../lib/state";
+import { mergeCourses, normalizeCode, removeSections } from "../../lib/state";
+import { solveBestEffort } from "../../lib/bestEffort";
 import { SCHOOL_KEY, schoolForHost, themeById, type SchoolTheme } from "../../lib/schools";
-import { PENDING_KEY, STATE_KEY, getStore, normalizeState, type PendingCrns, type SavedState } from "../../lib/storage";
+import { IN_SCHOOL_KEY, PENDING_KEY, STATE_KEY, getStore, normalizeState, type InSchool, type PendingCrns, type SavedState } from "../../lib/storage";
 import type { Course, Section } from "../../lib/types";
 import { adapterFor } from "./adapters";
 import type { SchoolAdapter } from "./adapters/types";
 import { fillCrns } from "./crnFill";
-import { searchSections } from "./search";
+import { searchSections, searchTerm } from "./search";
 import { isMessage, type SchoolTabMessage, type SearchSectionsMessage } from "../../lib/searchMessages";
 import { renderFillBar, renderPlannerBar, renderRegisteredBar, renderResults, shadowHost } from "./view";
 
@@ -55,7 +55,8 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
 
   /** Best schedule from everything in the planner, for the calendar beside the results. */
   function bestSchedule() {
-    return solve(state.courses, state.blocks, state.prefs, { keep: 1, maxSchedules: 20_000 }).schedules[0] ?? null;
+    // Best effort: one class that doesn't fit shouldn't blank the calendar.
+    return solveBestEffort(state.courses, state.blocks, state.prefs, { keep: 1, maxSchedules: 20_000 }).result.schedules[0] ?? null;
   }
 
   function conflictFor(best: ReturnType<typeof bestSchedule>) {
@@ -67,7 +68,63 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
     };
   }
 
+  /**
+   * Keep the planner in step with the school's Summary: a class that was in the Summary and has been
+   * taken out of it there (removed before submitting, or dropped) comes off the planner too.
+   * Careful on purpose: only for the same term, only for classes this page has shown in the Summary,
+   * and only after the class has stayed gone for a few seconds (the school redraws the list often).
+   */
+  const SUMMARY_GONE_MS = 3000;
+  const seenHere = new Set<string>();
+  const goneSince = new Map<string, number>();
+  let syncTimer: number | undefined;
+  let syncing = false;
+  async function syncWithSummary(): Promise<void> {
+    const summary = adapter.summaryCrns?.(document) ?? null;
+    const term = searchTerm(document);
+    if (!summary || !term || syncing) return;
+    syncing = true;
+    try {
+      const mine = new Set(state.courses.flatMap((c) => c.sections.map((s) => s.crn).filter((c): c is string => !!c)));
+      const saved = await store.get<InSchool>(IN_SCHOOL_KEY);
+      const tracked = new Set(saved?.term === term ? saved.crns : []);
+      for (const crn of summary) if (mine.has(crn)) { tracked.add(crn); seenHere.add(crn); goneSince.delete(crn); }
+
+      const now = Date.now();
+      const remove: string[] = [];
+      let waiting = false;
+      for (const crn of tracked) {
+        if (summary.has(crn) || !mine.has(crn)) { if (!mine.has(crn)) tracked.delete(crn); continue; }
+        if (!seenHere.has(crn)) continue; // not shown in the Summary since this page loaded: leave it alone
+        const since = goneSince.get(crn) ?? now;
+        goneSince.set(crn, since);
+        if (now - since >= SUMMARY_GONE_MS) remove.push(crn);
+        else waiting = true;
+      }
+      if (remove.length > 0) {
+        const latest = normalizeState(await store.get(STATE_KEY));
+        const { courses, removed } = removeSections(latest.courses, remove);
+        for (const crn of remove) { tracked.delete(crn); goneSince.delete(crn); seenHere.delete(crn); }
+        if (removed.length > 0) {
+          state = { ...latest, courses };
+          await store.set(STATE_KEY, state);
+          flash = `${removed.join(", ")} ${removed.length === 1 ? "was" : "were"} taken out of ${adapter.name}'s summary, so ${removed.length === 1 ? "it's" : "they're"} off your calendar too.`;
+        }
+      }
+      const next: InSchool = { term, crns: [...tracked].sort() };
+      if (JSON.stringify(next) !== JSON.stringify(saved)) await store.set(IN_SCHOOL_KEY, next);
+      if (remove.length > 0) render(true);
+      if (waiting) {
+        window.clearTimeout(syncTimer);
+        syncTimer = window.setTimeout(() => void syncWithSummary(), SUMMARY_GONE_MS + 200);
+      }
+    } finally {
+      syncing = false;
+    }
+  }
+
   function render(force = false): void {
+    void syncWithSummary();
     const results = adapter.readResults(document);
     const form = adapter.crnForm(document);
     const registered = adapter.readRegistered?.(document) ?? null;

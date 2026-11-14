@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { scheduleToIcs } from "../lib/ics";
+import type { LeftOut } from "../lib/bestEffort";
 import type { Diagnostic, SolveResult } from "../lib/solver";
 import { formatTime } from "../lib/time";
 import type { Block, Schedule } from "../lib/types";
@@ -32,8 +33,29 @@ function statsLine(s: Schedule): string {
   return parts.join(" · ");
 }
 
+/** Classes that don't fit: the calendar stays, and each one says why and can be removed here. */
+function LeftOutNotice({ leftOut, onRemove }: { leftOut: LeftOut[]; onRemove: (courseId: string) => void }) {
+  if (leftOut.length === 0) return null;
+  return (
+    <div className="left-out" role="alert">
+      <strong>{leftOut.length === 1 ? "1 class doesn't fit" : `${leftOut.length} classes don't fit`}, so {leftOut.length === 1 ? "it's" : "they're"} not on the calendar:</strong>
+      <ul>
+        {leftOut.map((l) => (
+          <li key={l.course.id}>
+            <span><strong>{l.course.code}</strong>{l.course.title && ` ${l.course.title}`}: {l.reason}.</span>
+            <button type="button" className="secondary" onClick={() => onRemove(l.course.id)}>Remove {l.course.code}</button>
+          </li>
+        ))}
+      </ul>
+      <span className="small">Remove it, or add another section of it that fits.</span>
+    </div>
+  );
+}
+
 interface Props {
   result: SolveResult;
+  leftOut: LeftOut[];
+  onRemoveCourse: (courseId: string) => void;
   blocks: Block[];
   termStart: string;
   termEnd: string;
@@ -42,7 +64,7 @@ interface Props {
   onSendCrns?: (crns: string[]) => Promise<string>;
 }
 
-export function Results({ result, blocks, termStart, termEnd, onTermChange, onSendCrns }: Props) {
+export function Results({ result, leftOut, onRemoveCourse, blocks, termStart, termEnd, onTermChange, onSendCrns }: Props) {
   const [index, setIndex] = useState(0);
   const [note, setNote] = useState<string | null>(null);
   useEffect(() => setIndex(0), [result]);
@@ -51,7 +73,8 @@ export function Results({ result, blocks, termStart, termEnd, onTermChange, onSe
     return (
       <section className="panel results">
         <h2>Schedules</h2>
-        {result.diagnostics.length === 0
+        <LeftOutNotice leftOut={leftOut} onRemove={onRemoveCourse} />
+        {leftOut.length > 0 ? null : result.diagnostics.length === 0
           ? <p className="muted">Add your classes and their sections to see schedules.</p>
           : <ul className="diagnostics">{result.diagnostics.map((d, i) => <li key={i}>{explain(d)}</li>)}</ul>}
       </section>
@@ -97,6 +120,8 @@ export function Results({ result, blocks, termStart, termEnd, onTermChange, onSe
           {result.totalFound > result.schedules.length && `; showing the best ${result.schedules.length}`}.
         </p>
       </div>
+
+      <LeftOutNotice leftOut={leftOut} onRemove={onRemoveCourse} />
 
       <div className="pager">
         <button type="button" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} aria-label="Previous schedule">←</button>
