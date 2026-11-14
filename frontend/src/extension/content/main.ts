@@ -7,6 +7,8 @@ import type { Course, Section } from "../../lib/types";
 import { adapterFor } from "./adapters";
 import type { SchoolAdapter } from "./adapters/types";
 import { fillCrns } from "./crnFill";
+import { searchSections } from "./search";
+import { isMessage, type SchoolTabMessage, type SearchSectionsMessage } from "../../lib/searchMessages";
 import { renderFillBar, renderPlannerBar, renderRegisteredBar, renderResults, shadowHost } from "./view";
 
 const RESULTS_HOST = "schedule-builder-results";
@@ -174,12 +176,27 @@ async function detectTheme(url: URL, adapter: SchoolAdapter): Promise<SchoolThem
   return themeById(null);
 }
 
+/**
+ * Lets the planner tab search this school's classes ("ACC 201") through this logged-in page.
+ * Only answers the extension's own planner; it reads listings and never registers.
+ */
+function listenForSearches(school: string): void {
+  const hello: SchoolTabMessage = { type: "school-tab", school };
+  void chrome.runtime.sendMessage(hello).catch(() => undefined);
+  chrome.runtime.onMessage.addListener((message: unknown, sender, reply) => {
+    if (sender.id !== chrome.runtime.id || !isMessage<SearchSectionsMessage>(message, "search-sections")) return false;
+    void searchSections(message.query, school).then(reply);
+    return true; // answering later
+  });
+}
+
 const url = new URL(location.href);
 const adapter = adapterFor(url);
 if (adapter) {
   void detectTheme(url, adapter).then((theme) => {
     // Remember it so the planner tab uses the same colors.
     if (theme.id !== "none") void store.set(SCHOOL_KEY, theme.id);
+    if (adapter.id !== "demo") listenForSearches(adapter.name);
     return run(adapter, theme);
   });
 }

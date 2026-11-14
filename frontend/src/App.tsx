@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BlocksEditor } from "./components/BlocksEditor";
+import { ClassSearch } from "./components/ClassSearch";
 import { CourseEditor } from "./components/CourseEditor";
+import { mergeCourses } from "./lib/state";
+import type { SearchReply, SearchSectionsMessage } from "./lib/searchMessages";
 import { PreferencesPanel } from "./components/PreferencesPanel";
 import { Results } from "./components/Results";
 import { exampleBlocks, exampleCourses } from "./lib/example";
@@ -64,6 +67,11 @@ export default function App() {
     return "Ready. Open your school's Register for Classes page, go to Enter CRNs, and click \"Fill my CRNs\". Then check them and press the school's Submit.";
   }
 
+  async function searchSchool(query: string): Promise<SearchReply> {
+    const message: SearchSectionsMessage = { type: "search-sections", query };
+    return (await chrome.runtime.sendMessage(message)) as SearchReply;
+  }
+
   return (
     <div className="app">
       <header>
@@ -71,7 +79,7 @@ export default function App() {
           <h1>Schedule Builder{schoolId !== "none" && <span className="school-tag"> · {themeById(schoolId).name}</span>}</h1>
           <p className="muted">
             {isExtension()
-              ? "Add classes with the Add buttons on your school's class search, or type them here."
+              ? "Search a class below, or use the Add buttons on your school's class search."
               : "Enter the sections you'd take. See every schedule that fits, best first."}
           </p>
         </div>
@@ -90,6 +98,10 @@ export default function App() {
       </header>
       <main className="layout">
         <div className="left">
+          {isExtension() && (
+            <ClassSearch courses={state.courses} onSearch={searchSchool}
+              onAdd={(course) => setState((s) => ({ ...s, courses: mergeCourses(s.courses, [course]) }))} />
+          )}
           <CourseEditor courses={state.courses} onChange={(courses) => set({ courses })} />
           <BlocksEditor blocks={state.blocks} onChange={(blocks) => set({ blocks })} />
           <PreferencesPanel prefs={state.prefs} onChange={(prefs) => set({ prefs })} />

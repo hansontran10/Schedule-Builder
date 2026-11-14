@@ -22,7 +22,11 @@ live by a student yet. ECU also runs Banner, but its pages haven't been checked 
      Submit. If the school's Add button can't be found for a section, it only adds it to the calendar
      and says so.
    - On **Browse Classes**, Add (or "Add all sections") just adds to the calendar and planner.
-2. **In the planner** (a full page inside the extension), the classes you added are combined into
+2. **In the planner** (a full page inside the extension), **Find a class** lets you type a class like
+   `ACC 201` and lists every section the school offers that term (days, times, room, instructor,
+   seats, CRN). Tick the ones you'd take and add them; no CRN hunting. The search runs through your
+   open, logged-in Register for Classes tab, using the same search the school's Find Classes page
+   uses, so it needs that tab open. It only reads listings. The classes you added are combined into
    every schedule that fits, ranked by what you care about, on a weekly calendar.
 3. **Already registered?** On the school's Registration page, **Show in my planner** brings the classes
    you're registered for into the planner, so you can see your current schedule in the weekly view.
@@ -86,7 +90,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 92 tests
+npm test          # 116 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```
@@ -121,6 +125,10 @@ web address to `content_scripts.matches` in `frontend/public/manifest.json`.
 TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
 
 ## Not built yet
+
+- Checking Find a class against a live school: the JSON it reads is Banner 9's standard class-search
+  format, tested with made-up responses (`src/lib/bannerApi.test.ts`) and in Chrome with the school's
+  address pointed at a test page. Sections it can't read are listed as skipped, never guessed.
 
 - ECU (waiting on saved pages; it uses Banner, so the same reader will likely work)
 - Confirming the Find Classes Add button on a real saved page: it's currently found by its "Add"
