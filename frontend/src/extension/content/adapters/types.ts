@@ -9,6 +9,11 @@ export interface SearchResults {
   note?: string;
   /** Sections skipped because their times couldn't be read, so they're never shown wrong. */
   skipped?: string[];
+  /**
+   * On a registration page, the school's own Add button for each section, by CRN. Clicking it puts the
+   * section in the school's registration summary (like a cart); the student still has to press Submit.
+   */
+  schoolAdd?: Map<string, HTMLElement>;
 }
 
 /** Classes the student is already registered for, read from the school's page. */

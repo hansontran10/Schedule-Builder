@@ -76,8 +76,15 @@ describe("UNCG class search", () => {
     expect(r.courses[0]!.sections.map((s) => s.label)).toEqual(["01H"]);
   });
 
-  it("does not replace the search on the Registration page, where Banner's own Add buttons live", () => {
+  it("also reads results on the Registration page's Find Classes tab", () => {
     open("uncg-class-search.html", "/classRegistration/classRegistration");
+    const r = uncg().readResults(document)!;
+    expect(r.courses).toHaveLength(2);
+    expect(r.schoolAdd).toBeDefined(); // looked for the school's Add buttons (this saved table has none)
+  });
+
+  it("ignores pages that are neither class search nor registration", () => {
+    open("uncg-class-search.html", "/registration/registration");
     expect(uncg().readResults(document)).toBeNull();
   });
 });

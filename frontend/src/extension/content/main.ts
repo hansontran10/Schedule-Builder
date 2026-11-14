@@ -1,3 +1,5 @@
+import { rejectionReason, sectionsConflict } from "../../lib/conflicts";
+import { solve } from "../../lib/solver";
 import { mergeCourses, normalizeCode } from "../../lib/state";
 import { SCHOOL_KEY, schoolForHost, themeById, type SchoolTheme } from "../../lib/schools";
 import { PENDING_KEY, STATE_KEY, getStore, normalizeState, type PendingCrns, type SavedState } from "../../lib/storage";
@@ -19,6 +21,7 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
   let showingOurs = true;
   let fillMessage: string | null = null;
   let importMessage: string | null = null;
+  let flash: string | null = null;
   let lastSignature = "";
 
   const isAdded = (course: Course, section: Section) => {
@@ -26,12 +29,40 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
     return !!mine?.sections.some((s) => (s.crn && section.crn ? s.crn === section.crn : s.label === section.label));
   };
 
-  async function add(course: Course, sections: Section[]): Promise<void> {
+  async function add(course: Course, sections: Section[], inSchool: boolean, schoolAdd?: Map<string, HTMLElement>): Promise<void> {
     // Re-read first: the planner tab may have changed things since this page loaded.
     const latest = normalizeState(await store.get(STATE_KEY));
     state = { ...latest, courses: mergeCourses(latest.courses, [{ ...course, sections }]) };
     await store.set(STATE_KEY, state);
+    const label = `${course.code} ${sections.map((s) => s.label).join(", ")}`;
+    if (inSchool) {
+      // Press the school's own Add for this section: it goes into the school's registration summary.
+      // Never Submit; the student does that on the school's page.
+      const button = sections[0]?.crn ? schoolAdd?.get(sections[0].crn) : undefined;
+      if (button?.isConnected) {
+        button.click();
+        flash = `${label} added to your calendar and to ${adapter.name}'s summary. Press ${adapter.name}'s Submit when you're ready to register.`;
+      } else {
+        flash = `${label} added to your calendar. ${adapter.name}'s Add button wasn't available, so add it in the school's list or Enter CRNs to register.`;
+      }
+    } else {
+      flash = `${label} added to your calendar.`;
+    }
     render(true);
+  }
+
+  /** Best schedule from everything in the planner, for the calendar beside the results. */
+  function bestSchedule() {
+    return solve(state.courses, state.blocks, state.prefs, { keep: 1, maxSchedules: 20_000 }).schedules[0] ?? null;
+  }
+
+  function conflictFor(best: ReturnType<typeof bestSchedule>) {
+    return (course: Course, section: Section): string | null => {
+      const busy = rejectionReason(section, state.blocks, state.prefs);
+      if (busy) return busy.charAt(0).toUpperCase() + busy.slice(1);
+      const clash = best?.picks.find((p) => normalizeCode(p.course.code) !== normalizeCode(course.code) && sectionsConflict(p.section, section));
+      return clash ? `Overlaps ${clash.course.code} ${clash.section.label}` : null;
+    };
   }
 
   function render(force = false): void {
@@ -43,8 +74,8 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
     // Skip re-rendering when nothing we show has changed (the page mutates constantly).
     const signature = JSON.stringify([
       results?.courses.map((c) => [c.code, c.sections.map((s) => [s.crn, s.label])]),
-      state.courses.map((c) => [c.code, c.sections.length]), showingOurs, !!form, freshPending?.crns, fillMessage,
-      registered?.courses.map((c) => c.sections[0]?.crn), importMessage,
+      state, showingOurs, !!form, freshPending?.crns, fillMessage, flash,
+      registered?.courses.map((c) => c.sections[0]?.crn), importMessage, results ? [...(results.schoolAdd?.keys() ?? [])] : null,
     ]);
     if (!force && signature === lastSignature) return;
     lastSignature = signature;
@@ -53,9 +84,13 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
       const { host, root } = shadowHost(document, RESULTS_HOST, theme);
       if (host.nextElementSibling !== results.container) results.container.before(host);
       results.container.style.display = showingOurs ? "none" : "";
+      const best = bestSchedule();
       renderResults(root, {
         courses: results.courses, schoolName: adapter.name, isAdded, showingOurs, note: results.note, skipped: results.skipped,
-        onAdd: (course, sections) => void add(course, sections),
+        ...(results.schoolAdd ? { schoolAdd: results.schoolAdd } : {}),
+        conflictFor: conflictFor(best), best, blocks: state.blocks, plannerCount: state.courses.length, flash,
+        onAdd: (course, sections, inSchool) => void add(course, sections, inSchool, results.schoolAdd),
+        onOpenPlanner: () => void chrome.runtime.sendMessage({ type: "open-planner" }),
         onToggle: () => { showingOurs = !showingOurs; render(true); },
       });
     } else {
@@ -101,7 +136,7 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
         },
         onOpen: () => void chrome.runtime.sendMessage({ type: "open-planner" }),
       });
-    } else if (results || state.courses.length > 0) {
+    } else if (!results?.courses.length && state.courses.length > 0) {
       renderPlannerBar(barRoot, state.courses.length, () => void chrome.runtime.sendMessage({ type: "open-planner" }));
     }
   }

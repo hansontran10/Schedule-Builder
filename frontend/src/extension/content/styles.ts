@@ -1,6 +1,6 @@
 /** Styles live inside a shadow root, so the school's CSS can't break ours and ours can't leak out. */
 export const STYLES = `
-:host { all: initial; --brand: #1d1d1b; --on-brand: #fff; --accent: #2f6fdf; --on-accent: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d1d1b; }
+:host { all: initial; container-type: inline-size; display: block; --brand: #1d1d1b; --on-brand: #fff; --accent: #2f6fdf; --on-accent: #fff; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d1d1b; }
 * { box-sizing: border-box; }
 .wrap { margin: 12px 0; padding-bottom: 80px; }
 .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 14px;
@@ -28,5 +28,27 @@ button:focus-visible { outline: 2px solid #2f6fdf; outline-offset: 1px; }
 .note-line { margin: 0 0 10px; font-size: 13px; color: #6b6a64; }
 .note-line.warn { color: #8a5a00; }
 .bar button.quiet { background: transparent; color: var(--on-brand); border-color: var(--on-brand); }
+.layout { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr) 340px; } .side { position: sticky; top: 8px; } }
+.side { background: #fff; border: 1px solid #e4e2da; border-radius: 10px; padding: 10px 12px; align-self: start; order: -1; }
+@container (min-width: 980px) { .side { order: 0; } }
+.side-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+.small { font-size: 12px; }
+button.small { padding: 3px 8px; font-size: 12px; }
+.side p { margin: 4px 0 8px; }
+.week { display: grid; border: 1px solid #e4e2da; border-radius: 6px; overflow: hidden; font-size: 11px; }
+.week-head { text-align: center; font-weight: 600; padding: 4px 0; border-left: 1px solid #e4e2da; color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, white); }
+.week-hours { color: #6b6a64; text-align: right; font-size: 10px; }
+.week-hours div { padding-right: 3px; transform: translateY(-0.5em); }
+.week-hours div:first-child { transform: none; }
+.week-day { position: relative; border-left: 1px solid #e4e2da; background-image: linear-gradient(to bottom, #efede6 1px, transparent 1px); }
+.week-event { position: absolute; left: 2px; right: 2px; border-radius: 4px; padding: 1px 3px; color: #fff; overflow: hidden; display: flex; flex-direction: column; line-height: 1.15; font-size: 10px; }
+.week-event.busy { background: repeating-linear-gradient(45deg, #ece9e0, #ece9e0 5px, #e2ded3 5px, #e2ded3 10px); color: #6b6a64; border: 1px dashed #c9c4b6; }
+.week-event.preview { background: color-mix(in srgb, var(--brand) 18%, white); color: var(--brand); border: 2px dashed var(--brand); z-index: 2; }
+.week-event.preview-conflict { background: #fdecea; color: #b3261e; border: 2px dashed #b3261e; z-index: 2; }
+tr.has-conflict td { color: #8b8a84; }
+.conflict { color: #b3261e; font-size: 12px; margin-top: 2px; white-space: normal; }
+.note-line.flash { color: #1f7a4d; }
+tbody tr:hover td { background: color-mix(in srgb, var(--brand) 5%, white); }
 .bar .note { font-size: 13px; opacity: 0.9; }
 `;

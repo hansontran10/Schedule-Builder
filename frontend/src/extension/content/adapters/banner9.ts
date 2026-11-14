@@ -95,10 +95,23 @@ function onPage(doc: Document, segment: string): boolean {
   return (doc.defaultView?.location.pathname ?? "").includes(segment);
 }
 
+/**
+ * The school's own "Add" control in a Find Classes result row (Register for Classes page). Banner draws
+ * these with its scripts after a search, so it's found by its label rather than an id. Returns undefined
+ * when there isn't exactly one, and then the extension only adds the class to its own calendar.
+ */
+function schoolAddButton(row: Element): HTMLElement | undefined {
+  const candidates = [...row.querySelectorAll<HTMLElement>("button, a, input[type=button]")].filter((el) => {
+    const label = (el instanceof HTMLInputElement ? el.value : el.textContent ?? "").replace(/\s+/g, " ").trim();
+    return /^add$/i.test(label) && !(el as HTMLButtonElement).disabled;
+  });
+  return candidates.length === 1 ? candidates[0] : undefined;
+}
+
 function readResults(doc: Document): SearchResults | null {
-  // Only the stand-alone Browse Classes page. The Registration page has its own search with
-  // Banner's real Add buttons, and replacing those would be confusing.
-  if (!onPage(doc, "/classSearch/")) return null;
+  // Browse Classes, and the Find Classes tab on Register for Classes (same Banner component).
+  const onRegistration = onPage(doc, "/classRegistration/");
+  if (!onPage(doc, "/classSearch/") && !onRegistration) return null;
   const table = [...doc.querySelectorAll<HTMLTableElement>("table")].find(
     (t) => t.querySelector('th[data-property="meetingTime"]') && t.querySelector('th[data-property="courseReferenceNumber"]'),
   );
@@ -107,6 +120,7 @@ function readResults(doc: Document): SearchResults | null {
   const codes = subjectCodes(doc);
   const byCode = new Map<string, Course>();
   const skipped: string[] = [];
+  const schoolAdd = new Map<string, HTMLElement>();
   for (const row of table.querySelectorAll<HTMLTableRowElement>("tbody tr")) {
     const cell = (p: string) => row.querySelector(`td[data-property="${p}"]`);
     const crn = text(cell("courseReferenceNumber"));
@@ -128,6 +142,11 @@ function readResults(doc: Document): SearchResults | null {
       continue;
     }
 
+    if (onRegistration) {
+      const button = schoolAddButton(row);
+      if (button) schoolAdd.set(crn, button);
+    }
+
     const section: Section = {
       id: `banner-${crn}`,
       label,
@@ -147,7 +166,10 @@ function readResults(doc: Document): SearchResults | null {
   const note = total > 1
     ? `This page shows ${records ? `part of ${records} results` : "part of the results"}. Use the school's page buttons below, or set "Per Page" to 50, to see the rest.`
     : undefined;
-  return { courses: [...byCode.values()], container: table, ...(note ? { note } : {}), ...(skipped.length ? { skipped } : {}) };
+  return {
+    courses: [...byCode.values()], container: table,
+    ...(note ? { note } : {}), ...(skipped.length ? { skipped } : {}), ...(onRegistration ? { schoolAdd } : {}),
+  };
 }
 
 function crnForm(doc: Document): CrnForm | null {

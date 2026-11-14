@@ -12,9 +12,16 @@ live by a student yet. ECU also runs Banner, but its pages haven't been checked 
 
 ## How it works
 
-1. **On the school's class search**, the extension replaces the old results table with clear class
-   cards (days, times, location, instructor, CRN) and adds **Add** buttons. One click on
-   "Show the school's original list" brings the school's own table back.
+1. **On the school's class search** (both Browse Classes and the Find Classes tab on Register for
+   Classes), the extension replaces the old results table with clear class cards (days, times,
+   location, instructor, seats, CRN) and a **weekly calendar beside them**, like NC State's planner.
+   Hovering a section previews it on the calendar; sections that overlap your classes or busy times
+   are marked before you add them. "Show the school's original list" brings the school's table back.
+   - On **Register for Classes**, **Add** puts the section on the calendar *and* presses the school's
+     own Add for it, so it lands in the school's registration summary (like a cart). It never presses
+     Submit. If the school's Add button can't be found for a section, it only adds it to the calendar
+     and says so.
+   - On **Browse Classes**, Add (or "Add all sections") just adds to the calendar and planner.
 2. **In the planner** (a full page inside the extension), the classes you added are combined into
    every schedule that fits, ranked by what you care about, on a weekly calendar.
 3. **Already registered?** On the school's Registration page, **Show in my planner** brings the classes
@@ -79,7 +86,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 88 tests
+npm test          # 92 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```
@@ -116,6 +123,9 @@ TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
 ## Not built yet
 
 - ECU (waiting on saved pages; it uses Banner, so the same reader will likely work)
+- Confirming the Find Classes Add button on a real saved page: it's currently found by its "Add"
+  label (`fixtures/uncw-find-classes.html` models it), because the saved Registration pages were on the
+  Enter CRNs tab
 - Banner's linked sections (a lecture that requires a specific lab)
 - Locking a section you must have
 - Comparing two schedules side by side

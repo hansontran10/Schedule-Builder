@@ -58,3 +58,24 @@ it("reads registered classes from UNCW's calendar (drawn at about 41.5px per hou
   expect(r.courses[1]!.sections[0]!.meetings).toEqual([{ days: ["M", "W", "F"], start: 780, end: 830 }]);
   expect(r.noTimes).toEqual(["UNI 101 800"]);
 });
+
+it("shows cards on Register for Classes > Find Classes and finds the school's Add button per section", () => {
+  open("uncw-find-classes.html", "/classRegistration/classRegistration");
+  const r = uncw().readResults(document)!;
+  expect(r.courses.map((c) => c.code)).toEqual(["BIO 241"]);
+  expect([...r.schoolAdd!.keys()]).toEqual(["22997", "22998"]);
+  expect(r.schoolAdd!.get("22997")!.textContent).toBe("Add");
+});
+
+it("does not guess when a row has no Add button, or more than one", () => {
+  open("uncw-find-classes.html", "/classRegistration/classRegistration");
+  const rows = document.querySelectorAll("table#table1 tbody tr");
+  rows[0]!.querySelector("button")!.remove();
+  rows[1]!.querySelector("td:last-child")!.insertAdjacentHTML("beforeend", "<a href='#'>Add</a>");
+  expect(uncw().readResults(document)!.schoolAdd!.size).toBe(0);
+});
+
+it("Browse Classes has no school Add buttons to press", () => {
+  open("uncw-class-search.html", "/classSearch/classSearch");
+  expect(uncw().readResults(document)!.schoolAdd).toBeUndefined();
+});
