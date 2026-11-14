@@ -81,7 +81,7 @@ it("Browse Classes has no school Add buttons to press", () => {
 });
 
 it("ECU's Banner address uses the same reader", () => {
-  const ecu = adapterFor(new URL("https://banprd-ssb.ecu.edu/StudentRegistrationSsb/ssb/classRegistration/classRegistration"));
+  const ecu = adapterFor(new URL("https://banprd-reg.ecu.edu/StudentRegistrationSsb/ssb/classRegistration/classRegistration"));
   expect(ecu?.id).toBe("ecu");
-  expect(adapterFor(new URL("https://banprd-ssb.ecu.edu/other/page"))).toBeUndefined();
+  expect(adapterFor(new URL("https://banprd-reg.ecu.edu/other/page"))).toBeUndefined();
 });

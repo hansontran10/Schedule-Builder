@@ -130,7 +130,7 @@ TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
   format, tested with made-up responses (`src/lib/bannerApi.test.ts`) and in Chrome with the school's
   address pointed at a test page. Sections it can't read are listed as skipped, never guessed.
 
-- Confirming ECU on its live site: ECU is turned on at `banprd-ssb.ecu.edu` (the address ECU's own pages link to) using the same Banner 9 reader, but no ECU page has been saved or checked yet
+- Confirming ECU on its live site: ECU is turned on at `banprd-reg.ecu.edu` (confirmed from an ECU student's address bar) using the same Banner 9 reader, but no ECU page has been saved or checked yet
 - Confirming the Find Classes Add button on a real saved page: it's currently found by its "Add"
   label (`fixtures/uncw-find-classes.html` models it), because the saved Registration pages were on the
   Enter CRNs tab

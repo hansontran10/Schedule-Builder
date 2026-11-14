@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Schedule Builder",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A cleaner class search and weekly schedule planner on top of your school's registration pages.",
   "icons": {
     "16": "icons/16.png",
@@ -27,7 +27,7 @@
       "matches": [
         "https://erp-registration.uncg.edu/StudentRegistrationSsb/*",
         "https://registration.uncw.edu/StudentRegistrationSsb/*",
-        "https://banprd-ssb.ecu.edu/StudentRegistrationSsb/*",
+        "https://banprd-reg.ecu.edu/StudentRegistrationSsb/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
