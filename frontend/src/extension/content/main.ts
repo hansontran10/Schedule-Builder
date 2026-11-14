@@ -1,4 +1,5 @@
 import { mergeCourses, normalizeCode } from "../../lib/state";
+import { SCHOOL_KEY, schoolForHost, themeById, type SchoolTheme } from "../../lib/schools";
 import { PENDING_KEY, STATE_KEY, getStore, normalizeState, type PendingCrns, type SavedState } from "../../lib/storage";
 import type { Course, Section } from "../../lib/types";
 import { adapterFor } from "./adapters";
@@ -12,7 +13,7 @@ const PENDING_MAX_AGE_MS = 6 * 60 * 60 * 1000; // stale CRNs from hours ago shou
 
 const store = getStore();
 
-async function run(adapter: SchoolAdapter): Promise<void> {
+async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
   let state: SavedState = normalizeState(await store.get(STATE_KEY));
   let pending = await store.get<PendingCrns>(PENDING_KEY);
   let showingOurs = true;
@@ -46,7 +47,7 @@ async function run(adapter: SchoolAdapter): Promise<void> {
     lastSignature = signature;
 
     if (results && results.courses.length > 0) {
-      const { host, root } = shadowHost(document, RESULTS_HOST);
+      const { host, root } = shadowHost(document, RESULTS_HOST, theme);
       if (host.nextElementSibling !== results.container) results.container.before(host);
       results.container.style.display = showingOurs ? "none" : "";
       renderResults(root, {
@@ -58,7 +59,7 @@ async function run(adapter: SchoolAdapter): Promise<void> {
       document.getElementById(RESULTS_HOST)?.remove();
     }
 
-    const { host: barHost, root: barRoot } = shadowHost(document, BAR_HOST);
+    const { host: barHost, root: barRoot } = shadowHost(document, BAR_HOST, theme);
     if (!barHost.isConnected) document.body.append(barHost);
     if (form && (freshPending || fillMessage)) {
       renderFillBar(barRoot, {
@@ -104,5 +105,26 @@ async function run(adapter: SchoolAdapter): Promise<void> {
   render(true);
 }
 
-const adapter = adapterFor(new URL(location.href));
-if (adapter) void run(adapter);
+/**
+ * The school comes from the site's address (anything under ecu.edu is ECU, and so on).
+ * The made-up test pages can pretend to be a school with ?school=ecu so themes can be tried.
+ */
+async function detectTheme(url: URL, adapter: SchoolAdapter): Promise<SchoolTheme> {
+  const fromHost = schoolForHost(url.hostname);
+  if (fromHost) return fromHost;
+  if (adapter.id === "demo") {
+    const asked = url.searchParams.get("school");
+    return themeById(asked ?? (await store.get<string>(SCHOOL_KEY)));
+  }
+  return themeById(null);
+}
+
+const url = new URL(location.href);
+const adapter = adapterFor(url);
+if (adapter) {
+  void detectTheme(url, adapter).then((theme) => {
+    // Remember it so the planner tab uses the same colors.
+    if (theme.id !== "none") void store.set(SCHOOL_KEY, theme.id);
+    return run(adapter, theme);
+  });
+}

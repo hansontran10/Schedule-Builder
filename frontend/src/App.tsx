@@ -4,6 +4,7 @@ import { CourseEditor } from "./components/CourseEditor";
 import { PreferencesPanel } from "./components/PreferencesPanel";
 import { Results } from "./components/Results";
 import { exampleBlocks, exampleCourses } from "./lib/example";
+import { SCHOOLS, SCHOOL_KEY, themeById, themeVars } from "./lib/schools";
 import { solve } from "./lib/solver";
 import { EMPTY_STATE, PENDING_KEY, STATE_KEY, getStore, isExtension, normalizeState, type PendingCrns, type SavedState } from "./lib/storage";
 
@@ -12,6 +13,7 @@ const store = getStore();
 export default function App() {
   const [state, setState] = useState<SavedState>(EMPTY_STATE);
   const [loaded, setLoaded] = useState(false);
+  const [schoolId, setSchoolId] = useState<string>("none");
   // The last value we wrote or received, so our own writes don't echo back as "changes".
   const lastSynced = useRef<string>("");
 
@@ -22,15 +24,28 @@ export default function App() {
       setState(s);
       setLoaded(true);
     });
+    // Which school's colors to use: set automatically when the extension sees a school's site.
+    store.get<string>(SCHOOL_KEY).then((id) => setSchoolId(themeById(id).id));
+    const stopSchool = store.onChange(SCHOOL_KEY, (id) => setSchoolId(themeById(id as string).id));
     // The school page adds classes by writing to the same storage.
-    return store.onChange(STATE_KEY, (raw) => {
+    const stopState = store.onChange(STATE_KEY, (raw) => {
       const s = normalizeState(raw);
       const json = JSON.stringify(s);
       if (json === lastSynced.current) return;
       lastSynced.current = json;
       setState(s);
     });
+    return () => {
+      stopSchool();
+      stopState();
+    };
   }, []);
+
+  useEffect(() => {
+    const theme = themeById(schoolId);
+    for (const [name, value] of Object.entries(themeVars(theme))) document.documentElement.style.setProperty(name, value);
+    document.title = theme.id === "none" ? "Schedule Builder" : `Schedule Builder · ${theme.name}`;
+  }, [schoolId]);
 
   useEffect(() => {
     if (!loaded) return; // never overwrite saved data with the empty starting state
@@ -53,7 +68,7 @@ export default function App() {
     <div className="app">
       <header>
         <div>
-          <h1>Schedule Builder</h1>
+          <h1>Schedule Builder{schoolId !== "none" && <span className="school-tag"> · {themeById(schoolId).name}</span>}</h1>
           <p className="muted">
             {isExtension()
               ? "Add classes with the Add buttons on your school's class search, or type them here."
@@ -61,6 +76,12 @@ export default function App() {
           </p>
         </div>
         <div className="row">
+          <label>School colors
+            <select value={schoolId} onChange={(e) => { setSchoolId(e.target.value); void store.set(SCHOOL_KEY, e.target.value); }}>
+              <option value="none">None</option>
+              {SCHOOLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </label>
           <button type="button" onClick={() => set({ courses: exampleCourses(), blocks: exampleBlocks() })}>Load example</button>
           <button type="button" className="secondary" onClick={() => {
             if (confirm("Clear all classes, busy times and preferences?")) setState(EMPTY_STATE);

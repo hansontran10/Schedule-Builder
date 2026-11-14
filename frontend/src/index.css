@@ -7,6 +7,9 @@
   --accent: #2f6fdf;
   --error: #b3261e;
   --ok: #1f7a4d;
+  --brand: #1d1d1b;
+  --on-brand: #ffffff;
+  --on-accent: #ffffff;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--ink);
   background: var(--bg);
@@ -14,7 +17,14 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 .app { max-width: 1320px; margin: 0 auto; padding: 20px 24px 48px; }
-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+  background: var(--brand); color: var(--on-brand); padding: 16px 20px; border-radius: 12px; border-bottom: 4px solid var(--accent); }
+header .muted { color: var(--on-brand); opacity: 0.85; }
+header button { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+header button.secondary { background: transparent; color: var(--on-brand); border-color: var(--on-brand); }
+header select { font: inherit; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--on-brand); background: transparent; color: var(--on-brand); }
+header select option { color: #1d1d1b; }
+header label { color: var(--on-brand); }
 h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.01em; }
 h2 { margin: 0 0 6px; font-size: 1.05rem; }
 h3 { margin: 16px 0 6px; font-size: 0.9rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -37,13 +47,13 @@ input, textarea, select, button { font: inherit; }
 input, textarea { border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: #fff; min-width: 0; }
 input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .narrow { width: 7.5em; }
-button { border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button { border: 1px solid var(--brand); background: var(--brand); color: var(--on-brand); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
 button:disabled { opacity: 0.4; cursor: default; }
-button.secondary { background: transparent; color: var(--ink); }
+button.secondary { background: transparent; color: var(--brand); }
 button.link { background: none; border: none; color: var(--muted); padding: 0 4px; margin-left: auto; }
 button.link:hover { color: var(--error); }
 .chip { background: #fff; color: var(--ink); border-color: var(--line); padding: 4px 10px; }
-.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip.on { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 .day-picker { display: flex; gap: 4px; flex-wrap: wrap; }
 .course { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
 .course-head { display: flex; align-items: baseline; gap: 6px; }
@@ -57,7 +67,7 @@ button.link:hover { color: var(--error); }
 .pager button { padding: 4px 10px; }
 .diagnostics { margin: 8px 0; padding-left: 18px; color: var(--error); }
 .week { display: grid; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.week-head { text-align: center; font-size: 0.85rem; font-weight: 600; padding: 6px 0; border-left: 1px solid var(--line); background: #fbfaf7; }
+.week-head { text-align: center; font-size: 0.85rem; font-weight: 600; padding: 6px 0; border-left: 1px solid var(--line); background: color-mix(in srgb, var(--brand) 8%, white); color: var(--brand); }
 .hours { font-size: 0.72rem; color: var(--muted); text-align: right; }
 .hours div { padding-right: 6px; transform: translateY(-0.5em); }
 .hours div:first-child { transform: none; }
@@ -72,4 +82,6 @@ table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 0.9
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 th { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 .export { margin-top: 14px; }
-.register { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding: 10px 12px; background: #eef3fd; border-radius: 8px; }
+.register { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--brand) 10%, white); border-left: 4px solid var(--brand); border-radius: 8px; }
+input[type=range] { accent-color: var(--brand); }
+.school-tag { font-weight: 400; opacity: 0.9; }

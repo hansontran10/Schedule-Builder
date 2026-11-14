@@ -7,7 +7,7 @@ schedule planning feels at NC State.
 **Status: the extension works end to end on made-up test pages. No real school is supported yet.**
 Each school needs a small "adapter" written from saved copies of its actual pages (see below).
 
-![The planner showing a ranked weekly schedule](docs/screenshot.png)
+![The planner in ECU colors showing a ranked weekly schedule](docs/screenshot.png)
 
 ## How it works
 
@@ -21,6 +21,11 @@ Each school needs a small "adapter" written from saved copies of its actual page
    with the school's own button, so holds, prerequisites and errors are handled by the school.
 
 ![The restyled class search on the test page](docs/extension-class-search.png)
+
+**School colors.** The extension recognizes the school from the site's address (anything under
+ecu.edu, uncw.edu or uncg.edu) and uses that school's colors on its class cards and in the planner:
+ECU purple and gold, UNCW teal and gold, UNCG navy and gold. The planner also has a "School colors"
+menu to pick one by hand. Colors only: no school logos or wordmarks.
 
 The extension only reads pages you already have open while logged in. It never sees your password,
 never contacts any server, and keeps your classes in your own browser.
@@ -52,7 +57,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 63 tests
+npm test          # 66 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```
@@ -61,7 +66,8 @@ Load the extension in Chrome or Edge:
 
 1. Go to `chrome://extensions` and turn on **Developer mode** (top right).
 2. Click **Load unpacked** and choose the `frontend/dist` folder.
-3. With `npm run dev` running, open http://localhost:5173/demo/browse.html, add some classes,
+3. With `npm run dev` running, open http://localhost:5173/demo/browse.html (add `?school=ecu`,
+   `?school=uncw` or `?school=uncg` to try each school's colors), add some classes,
    click **Open planner**, then **Register with these CRNs**, then open the test page's
    "Register for Classes" link and click **Fill my CRNs**.
 

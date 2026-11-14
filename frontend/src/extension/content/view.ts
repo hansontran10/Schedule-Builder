@@ -1,6 +1,8 @@
 import { formatTime } from "../../lib/time";
 import type { Course, Section } from "../../lib/types";
 import { STYLES } from "./styles";
+import type { SchoolTheme } from "../../lib/schools";
+import { themeVars } from "../../lib/schools";
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...children: Array<Node | string>): HTMLElementTagNameMap[K] {
   const node = Object.assign(document.createElement(tag), props);
@@ -9,13 +11,14 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLEl
 }
 
 /** A host element with a shadow root and our styles. Reused if it already exists. */
-export function shadowHost(doc: Document, id: string): { host: HTMLElement; root: ShadowRoot } {
+export function shadowHost(doc: Document, id: string, theme: SchoolTheme): { host: HTMLElement; root: ShadowRoot } {
   let host = doc.getElementById(id);
   if (!host) {
     host = doc.createElement("div");
     host.id = id;
     host.attachShadow({ mode: "open" });
   }
+  for (const [name, value] of Object.entries(themeVars(theme))) host.style.setProperty(name, value);
   const root = host.shadowRoot!;
   root.replaceChildren(el("style", { textContent: STYLES }));
   return { host, root };
