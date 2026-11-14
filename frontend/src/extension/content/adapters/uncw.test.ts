@@ -80,8 +80,18 @@ it("Browse Classes has no school Add buttons to press", () => {
   expect(uncw().readResults(document)!.schoolAdd).toBeUndefined();
 });
 
-it("ECU's Banner address uses the same reader", () => {
-  const ecu = adapterFor(new URL("https://banprd-reg.ecu.edu/StudentRegistrationSsb/ssb/classRegistration/classRegistration"));
-  expect(ecu?.id).toBe("ecu");
-  expect(adapterFor(new URL("https://banprd-reg.ecu.edu/other/page"))).toBeUndefined();
+it.each([
+  ["https://banprod-reg.ecu.edu/StudentRegistrationSsb/ssb/classRegistration/classRegistration", "ecu"], // from an ECU student's address bar
+  ["https://banprd-reg.ecu.edu/StudentRegistrationSsb/ssb/classSearch/classSearch", "ecu"],
+  ["https://erp-registration.uncg.edu/StudentRegistrationSsb/ssb/term/termSelection", "uncg"],
+  ["https://registration.uncw.edu/StudentRegistrationSsb/ssb/classRegistration/classRegistration", "uncw"],
+])("any registration address under the school's domain: %s", (address, id) => {
+  expect(adapterFor(new URL(address))?.id).toBe(id);
 });
+
+it.each([
+  "https://banprod-reg.ecu.edu/other/page",
+  "https://ecu.edu.evil.example/StudentRegistrationSsb/x",
+  "https://notecu.edu/StudentRegistrationSsb/x",
+  "http://banprod-reg.ecu.edu/StudentRegistrationSsb/x",
+])("not %s", (address) => expect(adapterFor(new URL(address))).toBeUndefined());

@@ -6,7 +6,7 @@ schedule planning feels at NC State.
 
 **Status:** UNCG and UNCW are supported, built and tested against saved copies of each school's real
 Banner 9 pages (class search, registration, and the registered-classes calendar). Neither has been used
-live by a student yet. ECU is turned on at its Banner 9 address with the same reader, but its pages haven't been checked yet.
+live by a student yet. ECU is turned on at its Banner 9 address (banprod-reg.ecu.edu) with the same reader, but its pages haven't been checked yet.
 
 ![The planner in ECU colors showing a ranked weekly schedule](docs/screenshot.png)
 
@@ -130,7 +130,7 @@ TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
   format, tested with made-up responses (`src/lib/bannerApi.test.ts`) and in Chrome with the school's
   address pointed at a test page. Sections it can't read are listed as skipped, never guessed.
 
-- Confirming ECU on its live site: ECU is turned on at `banprd-reg.ecu.edu` (confirmed from an ECU student's address bar) using the same Banner 9 reader, but no ECU page has been saved or checked yet
+- Confirming ECU on its live site: ECU is turned on for its registration pages (`banprod-reg.ecu.edu`, from an ECU student's address bar) using the same Banner 9 reader, but no ECU page has been saved or checked yet
 - Confirming the Find Classes Add button on a real saved page: it's currently found by its "Add"
   label (`fixtures/uncw-find-classes.html` models it), because the saved Registration pages were on the
   Enter CRNs tab

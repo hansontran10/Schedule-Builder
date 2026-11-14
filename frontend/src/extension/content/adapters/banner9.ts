@@ -266,11 +266,13 @@ function readRegistered(doc: Document): RegisteredSchedule | null {
   return { courses, noTimes };
 }
 
-export function banner9Adapter(config: { id: string; name: string; hosts: string[] }): SchoolAdapter {
+/** A school's Banner 9 registration lives somewhere under its domain (e.g. banprod-reg.ecu.edu). */
+export function banner9Adapter(config: { id: string; name: string; domain: string }): SchoolAdapter {
+  const onDomain = (host: string) => host === config.domain || host.endsWith(`.${config.domain}`);
   return {
     id: config.id,
     name: config.name,
-    matches: (url) => url.protocol === "https:" && config.hosts.includes(url.hostname) && url.pathname.startsWith("/StudentRegistrationSsb/"),
+    matches: (url) => url.protocol === "https:" && onDomain(url.hostname.toLowerCase()) && url.pathname.startsWith("/StudentRegistrationSsb/"),
     readResults,
     crnForm,
     readRegistered,
