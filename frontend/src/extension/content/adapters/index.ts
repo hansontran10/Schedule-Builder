@@ -6,6 +6,7 @@ import type { SchoolAdapter } from "./types";
 export const ADAPTERS: SchoolAdapter[] = [
   banner9Adapter({ id: "uncg", name: "UNCG", hosts: ["erp-registration.uncg.edu"] }),
   banner9Adapter({ id: "uncw", name: "UNCW", hosts: ["registration.uncw.edu"] }),
+  banner9Adapter({ id: "ecu", name: "ECU", hosts: ["banprd-ssb.ecu.edu"] }),
   demoAdapter,
 ];
 
