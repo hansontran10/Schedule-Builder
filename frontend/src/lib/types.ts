@@ -11,6 +11,12 @@ export interface Meeting {
   start: number;
   end: number;
   location?: string;
+  /**
+   * First and last day this meeting happens, as "YYYY-MM-DD", when the school says.
+   * Half-semester classes use these: two classes at the same time in different halves don't conflict.
+   */
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface Section {
@@ -18,6 +24,8 @@ export interface Section {
   label: string; // e.g. "001"
   crn?: string;
   instructor?: string;
+  /** Seats or other status text from the school, e.g. "32 of 35 seats remain." */
+  status?: string;
   /** Empty means online or asynchronous: it never conflicts with anything. */
   meetings: Meeting[];
 }

@@ -31,7 +31,7 @@ interface Option {
 
 function meetingKey(section: Section): string {
   return section.meetings
-    .map((m) => `${[...m.days].sort().join("")}@${m.start}-${m.end}`)
+    .map((m) => `${[...m.days].sort().join("")}@${m.start}-${m.end}@${m.startDate ?? ""}~${m.endDate ?? ""}`)
     .sort()
     .join("|");
 }

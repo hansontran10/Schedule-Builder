@@ -25,6 +25,8 @@ button:focus-visible { outline: 2px solid #2f6fdf; outline-offset: 1px; }
   background: var(--brand); color: var(--on-brand); border-bottom: 3px solid var(--accent); border-radius: 10px; padding: 10px 14px; font-size: 14px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.25); max-width: 420px; }
 .bar button { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .pre { white-space: pre-line; }
+.note-line { margin: 0 0 10px; font-size: 13px; color: #6b6a64; }
+.note-line.warn { color: #8a5a00; }
 .bar button.quiet { background: transparent; color: var(--on-brand); border-color: var(--on-brand); }
 .bar .note { font-size: 13px; opacity: 0.9; }
 `;

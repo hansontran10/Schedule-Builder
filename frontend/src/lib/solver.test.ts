@@ -175,3 +175,25 @@ it("matches brute force on 500 random inputs", () => {
     if (expected.count > 0) expect(r.schedules[0]!.score, `case ${t}`).toBeCloseTo(expected.best);
   }
 });
+
+describe("half-semester classes", () => {
+  const firstHalf = (label: string) => ({ ...sec(label, "TR 2:00pm-3:15pm"), meetings: [{ days: ["T", "R"] as Day[], start: 840, end: 915, startDate: "2027-01-11", endDate: "2027-03-03" }] });
+  const secondHalf = (label: string) => ({ ...sec(label, "TR 2:00pm-3:15pm"), meetings: [{ days: ["T", "R"] as Day[], start: 840, end: 915, startDate: "2027-03-04", endDate: "2027-05-04" }] });
+  const fullTerm = (label: string) => ({ ...sec(label, "TR 2:00pm-3:15pm"), meetings: [{ days: ["T", "R"] as Day[], start: 840, end: 915, startDate: "2027-01-11", endDate: "2027-04-28" }] });
+
+  it("same time in different halves does not conflict", () => {
+    expect(sectionsConflict(firstHalf("a"), secondHalf("b"))).toBe(false);
+    expect(solve([course("A", firstHalf("1")), course("B", secondHalf("1"))], [], prefs()).totalFound).toBe(1);
+  });
+
+  it("overlapping date ranges still conflict, including a full-term class", () => {
+    expect(sectionsConflict(fullTerm("a"), secondHalf("b"))).toBe(true);
+    expect(sectionsConflict(firstHalf("a"), sec("b", "T 2:30pm-3:00pm"))).toBe(true); // no dates = whole term
+  });
+
+  it("does not treat different halves as the same time slot", () => {
+    const r = solve([course("A", firstHalf("1"), secondHalf("2"))], [], prefs());
+    expect(r.totalFound).toBe(2);
+    expect(r.schedules.every((s) => s.picks[0]!.alternatives.length === 0)).toBe(true);
+  });
+});

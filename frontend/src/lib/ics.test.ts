@@ -42,3 +42,15 @@ it("escapes text and uses CRLF line endings", () => {
 it("rejects an end date before the start", () => {
   expect(() => scheduleToIcs(schedule(course("A", sec("1", "M 9:00-9:50"))), "2027-05-07", "2027-01-11", now)).toThrow();
 });
+
+it("uses the school's own dates for a meeting when it has them", () => {
+  const c = course("ADS 205", { ...sec("01", "TR 2:00pm-3:15pm"),
+    meetings: [{ days: ["T", "R"], start: 840, end: 915, startDate: "2027-03-04", endDate: "2027-05-04" }] });
+  const ics = scheduleToIcs(schedule(c), "", "", now);
+  expect(ics).toContain("DTSTART:20270304T140000"); // March 4, 2027 is a Thursday
+  expect(ics).toContain("UNTIL=20270504T235959");
+});
+
+it("asks for term dates when a meeting has none", () => {
+  expect(() => scheduleToIcs(schedule(course("A", sec("1", "M 9:00-9:50"))), "", "", now)).toThrow(/term's start and end/);
+});

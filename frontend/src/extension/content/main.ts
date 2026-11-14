@@ -5,7 +5,7 @@ import type { Course, Section } from "../../lib/types";
 import { adapterFor } from "./adapters";
 import type { SchoolAdapter } from "./adapters/types";
 import { fillCrns } from "./crnFill";
-import { renderFillBar, renderPlannerBar, renderResults, shadowHost } from "./view";
+import { renderFillBar, renderPlannerBar, renderRegisteredBar, renderResults, shadowHost } from "./view";
 
 const RESULTS_HOST = "schedule-builder-results";
 const BAR_HOST = "schedule-builder-bar";
@@ -18,6 +18,7 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
   let pending = await store.get<PendingCrns>(PENDING_KEY);
   let showingOurs = true;
   let fillMessage: string | null = null;
+  let importMessage: string | null = null;
   let lastSignature = "";
 
   const isAdded = (course: Course, section: Section) => {
@@ -36,12 +37,14 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
   function render(force = false): void {
     const results = adapter.readResults(document);
     const form = adapter.crnForm(document);
+    const registered = adapter.readRegistered?.(document) ?? null;
     const freshPending = pending && Date.now() - pending.createdAt < PENDING_MAX_AGE_MS ? pending : undefined;
 
     // Skip re-rendering when nothing we show has changed (the page mutates constantly).
     const signature = JSON.stringify([
       results?.courses.map((c) => [c.code, c.sections.map((s) => [s.crn, s.label])]),
       state.courses.map((c) => [c.code, c.sections.length]), showingOurs, !!form, freshPending?.crns, fillMessage,
+      registered?.courses.map((c) => c.sections[0]?.crn), importMessage,
     ]);
     if (!force && signature === lastSignature) return;
     lastSignature = signature;
@@ -51,7 +54,7 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
       if (host.nextElementSibling !== results.container) results.container.before(host);
       results.container.style.display = showingOurs ? "none" : "";
       renderResults(root, {
-        courses: results.courses, schoolName: adapter.name, isAdded, showingOurs,
+        courses: results.courses, schoolName: adapter.name, isAdded, showingOurs, note: results.note, skipped: results.skipped,
         onAdd: (course, sections) => void add(course, sections),
         onToggle: () => { showingOurs = !showingOurs; render(true); },
       });
@@ -80,6 +83,23 @@ async function run(adapter: SchoolAdapter, theme: SchoolTheme): Promise<void> {
           void store.remove(PENDING_KEY);
           render(true);
         },
+      });
+    } else if (registered && registered.courses.length > 0) {
+      renderRegisteredBar(barRoot, {
+        count: registered.courses.length,
+        message: importMessage,
+        onImport: () => {
+          void (async () => {
+            const latest = normalizeState(await store.get(STATE_KEY));
+            state = { ...latest, courses: mergeCourses(latest.courses, registered.courses) };
+            await store.set(STATE_KEY, state);
+            importMessage = registered.noTimes.length
+              ? `Added. ${registered.noTimes.join(", ")} had no times on the school's calendar (online, or not meeting this week).`
+              : "Added to your planner.";
+            render(true);
+          })();
+        },
+        onOpen: () => void chrome.runtime.sendMessage({ type: "open-planner" }),
       });
     } else if (results || state.courses.length > 0) {
       renderPlannerBar(barRoot, state.courses.length, () => void chrome.runtime.sendMessage({ type: "open-planner" }));

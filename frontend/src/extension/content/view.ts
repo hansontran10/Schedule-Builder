@@ -24,16 +24,26 @@ export function shadowHost(doc: Document, id: string, theme: SchoolTheme): { hos
   return { host, root };
 }
 
+function shortDate(iso: string): string {
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}/${Number(d)}`;
+}
+
 function meetingText(section: Section): { when: string; where: string } {
   if (section.meetings.length === 0) return { when: "Online / no set time", where: "" };
   return {
-    when: section.meetings.map((m) => `${m.days.join("")} ${formatTime(m.start)}–${formatTime(m.end)}`).join("\n"),
+    when: section.meetings.map((m) => {
+      const base = `${m.days.join("")} ${formatTime(m.start)}–${formatTime(m.end)}`;
+      return m.startDate && m.endDate ? `${base}  (${shortDate(m.startDate)}–${shortDate(m.endDate)})` : base;
+    }).join("\n"),
     where: section.meetings.map((m) => m.location ?? "").join("\n"),
   };
 }
 
 export interface ResultsViewOptions {
   courses: Course[];
+  note?: string;
+  skipped?: string[];
   schoolName: string;
   /** Section ids (by CRN or label key) already in the planner. */
   isAdded(course: Course, section: Section): boolean;
@@ -51,6 +61,11 @@ export function renderResults(root: ShadowRoot, o: ResultsViewOptions): void {
       o.showingOurs ? "Show the school's original list" : "Show the Schedule Builder view"),
   );
   const wrap = el("div", { className: "wrap" }, toolbar);
+  if (o.showingOurs && o.note) wrap.append(el("p", { className: "note-line" }, o.note));
+  if (o.showingOurs && o.skipped?.length) {
+    wrap.append(el("p", { className: "note-line warn" },
+      `Couldn't read the times for ${o.skipped.join(", ")}, so ${o.skipped.length === 1 ? "it isn't" : "they aren't"} shown here. Check the school's original list.`));
+  }
 
   if (o.showingOurs) {
     const cards = el("div", { className: "cards" });
@@ -67,6 +82,7 @@ export function renderResults(root: ShadowRoot, o: ResultsViewOptions): void {
           el("td", { className: "pre" }, when),
           el("td", { className: "muted pre" }, where),
           el("td", {}, s.instructor ?? ""),
+          el("td", { className: "muted" }, s.status ?? ""),
           el("td", { className: "mono" }, s.crn ?? ""),
           el("td", {}, el("button", { type: "button", className: added ? "added" : "ghost", disabled: added,
             onclick: () => o.onAdd(course, [s]) }, added ? "Added" : "Add")),
@@ -77,7 +93,7 @@ export function renderResults(root: ShadowRoot, o: ResultsViewOptions): void {
           el("span", {}, el("span", { className: "code" }, course.code), el("span", { className: "title" }, course.title ?? "")),
           addAll),
         el("table", {},
-          el("thead", {}, el("tr", {}, ...["Section", "Days and times", "Location", "Instructor", "CRN", ""].map((h) => el("th", {}, h)))),
+          el("thead", {}, el("tr", {}, ...["Section", "Days and times", "Location", "Instructor", "Seats", "CRN", ""].map((h) => el("th", {}, h)))),
           body),
       ));
     }
@@ -104,6 +120,20 @@ export function renderFillBar(root: ShadowRoot, o: { count: number; message: str
       el("span", {}, `${o.count} CRN${o.count === 1 ? "" : "s"} from your planner`),
       el("button", { type: "button", onclick: o.onFill }, "Fill my CRNs"),
       el("button", { type: "button", className: "quiet", onclick: o.onDismiss }, "Not now"),
+    );
+  }
+  root.append(bar);
+}
+
+/** On the registration page: offer to show the classes the student is already registered for. */
+export function renderRegisteredBar(root: ShadowRoot, o: { count: number; message: string | null; onImport(): void; onOpen(): void }): void {
+  const bar = el("div", { className: "bar" });
+  if (o.message) {
+    bar.append(el("span", { className: "note" }, o.message), el("button", { type: "button", onclick: o.onOpen }, "Open planner"));
+  } else {
+    bar.append(
+      el("span", {}, `You're registered for ${o.count} class${o.count === 1 ? "" : "es"}`),
+      el("button", { type: "button", onclick: o.onImport }, "Show in my planner"),
     );
   }
   root.append(bar);

@@ -139,7 +139,10 @@ export function Results({ result, blocks, termStart, termEnd, onTermChange, onSe
         <button type="button" onClick={copyCrns} disabled={!crns}>Copy CRNs</button>
         <label>Classes start <input type="date" value={termStart} onChange={(e) => onTermChange(e.target.value, termEnd)} /></label>
         <label>Classes end <input type="date" value={termEnd} onChange={(e) => onTermChange(termStart, e.target.value)} /></label>
-        <button type="button" onClick={download} disabled={!termStart || !termEnd}>Download .ics</button>
+        <button type="button" onClick={download}
+          disabled={(!termStart || !termEnd) && !schedule.picks.every((p) => p.section.meetings.every((m) => m.startDate && m.endDate))}>
+          Download .ics
+        </button>
       </div>
       {note && <p className="muted small">{note}</p>}
     </section>

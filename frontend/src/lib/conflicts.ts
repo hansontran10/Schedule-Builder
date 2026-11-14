@@ -4,11 +4,22 @@ interface Slot {
   days: Day[];
   start: number;
   end: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+/** Do the date ranges overlap? Missing dates mean "the whole term", so they always overlap. */
+function datesOverlap(a: Slot, b: Slot): boolean {
+  // ISO dates ("2027-03-04") compare correctly as strings.
+  if (a.startDate && b.endDate && a.startDate > b.endDate) return false;
+  if (b.startDate && a.endDate && b.startDate > a.endDate) return false;
+  return true;
 }
 
 export function slotsOverlap(a: Slot, b: Slot): boolean {
   if (!a.days.some((d) => b.days.includes(d))) return false;
-  return a.start < b.end && b.start < a.end;
+  if (!(a.start < b.end && b.start < a.end)) return false;
+  return datesOverlap(a, b);
 }
 
 export function sectionsConflict(a: Section, b: Section): boolean {

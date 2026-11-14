@@ -5,6 +5,17 @@ export interface SearchResults {
   courses: Course[];
   /** The school's own results element. Hidden while our view is shown, never removed. */
   container: HTMLElement;
+  /** Something the student should know about this page, e.g. that more results are on other pages. */
+  note?: string;
+  /** Sections skipped because their times couldn't be read, so they're never shown wrong. */
+  skipped?: string[];
+}
+
+/** Classes the student is already registered for, read from the school's page. */
+export interface RegisteredSchedule {
+  courses: Course[];
+  /** Classes the page listed but showed no meeting times for (online, or not meeting this week). */
+  noTimes: string[];
 }
 
 /** The CRN boxes on the school's "Register for Classes" page. */
@@ -30,4 +41,6 @@ export interface SchoolAdapter {
   readResults(doc: Document): SearchResults | null;
   /** The CRN entry form, or null if it isn't on this page. */
   crnForm(doc: Document): CrnForm | null;
+  /** The student's current registered classes, if this page shows them. */
+  readRegistered?(doc: Document): RegisteredSchedule | null;
 }

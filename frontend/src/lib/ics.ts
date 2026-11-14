@@ -35,16 +35,20 @@ function fold(line: string): string {
  * them at the same clock time wherever the student is, which is what a class schedule means.
  */
 export function scheduleToIcs(schedule: Schedule, termStart: string, termEnd: string, now = new Date()): string {
-  const start = parseDate(termStart);
-  const end = parseDate(termEnd);
-  if (!(start <= end)) throw new Error("term end must be on or after term start");
-  const until = `${end.getFullYear()}${pad(end.getMonth() + 1)}${pad(end.getDate())}T235959`;
+  if (termStart && termEnd && !(parseDate(termStart) <= parseDate(termEnd))) throw new Error("term end must be on or after term start");
   const dtstamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`;
 
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Schedule Builder//EN", "CALSCALE:GREGORIAN"];
   for (const { course, section } of schedule.picks) {
     section.meetings.forEach((m, i) => {
-      // First date on or after the term start that falls on one of the meeting days.
+      // The school's own dates for this meeting win; otherwise use the term dates entered.
+      const from = m.startDate ?? termStart;
+      const to = m.endDate ?? termEnd;
+      if (!from || !to) throw new Error(`Enter the term's start and end dates (${course.code} has no dates from the school).`);
+      const start = parseDate(from);
+      const end = parseDate(to);
+      const until = `${end.getFullYear()}${pad(end.getMonth() + 1)}${pad(end.getDate())}T235959`;
+      // First date on or after the start that falls on one of the meeting days.
       const first = new Date(start);
       while (!m.days.some((d) => JS_DAY[d] === first.getDay())) first.setDate(first.getDate() + 1);
       if (first > end) return;

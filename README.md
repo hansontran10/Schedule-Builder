@@ -4,8 +4,9 @@ A browser extension that puts a cleaner class search and a weekly schedule plann
 school's older registration pages. Built for friends at UNCW, UNCG and ECU, modeled on how
 schedule planning feels at NC State.
 
-**Status: the extension works end to end on made-up test pages. No real school is supported yet.**
-Each school needs a small "adapter" written from saved copies of its actual pages (see below).
+**Status:** UNCG is supported, built and tested against saved copies of UNCG's real Banner 9 pages
+(class search, registration, and the registered-classes calendar). It has not yet been used live by a
+UNCG student. UNCW and ECU also run Banner, but their pages haven't been checked yet.
 
 ![The planner in ECU colors showing a ranked weekly schedule](docs/screenshot.png)
 
@@ -16,11 +17,13 @@ Each school needs a small "adapter" written from saved copies of its actual page
    "Show the school's original list" brings the school's own table back.
 2. **In the planner** (a full page inside the extension), the classes you added are combined into
    every schedule that fits, ranked by what you care about, on a weekly calendar.
-3. **To register**, click **Register with these CRNs**. On the school's registration page the
+3. **Already registered?** On the school's Registration page, **Show in my planner** brings the classes
+   you're registered for into the planner, so you can see your current schedule in the weekly view.
+4. **To register**, click **Register with these CRNs**. On the school's registration page the
    extension fills the CRN boxes for you. **It never presses Submit.** You check them and submit
    with the school's own button, so holds, prerequisites and errors are handled by the school.
 
-![The restyled class search on the test page](docs/extension-class-search.png)
+![UNCG's class search with the extension (from an anonymized copy of the real page)](docs/extension-class-search.png)
 
 **School colors.** The extension recognizes the school from the site's address (anything under
 ecu.edu, uncw.edu or uncg.edu) and uses that school's colors on its class cards and in the planner:
@@ -32,6 +35,21 @@ never contacts any server, and keeps your classes in your own browser.
 
 Note: UNCW (Schedule Wizard), UNCG (Schedule Hero) and ECU (Schedule Planner) have official planners.
 This is a personal project and is not affiliated with or endorsed by any school.
+
+## UNCG details
+
+- Reads UNCG's Browse Classes results (`erp-registration.uncg.edu/StudentRegistrationSsb/.../classSearch`):
+  subject code, number, section, CRN, days, times, building and room, instructor, seats, and each
+  section's own start and end dates.
+- **Half-semester classes:** two classes at the same time in different halves of the term don't conflict.
+- Online sections (no meeting time) never conflict with anything.
+- A section whose time can't be read is left out and named on the page, never shown with a guessed time.
+- Banner shows 10 results per page by default; the extension reads the page that's showing and says so.
+- Registered classes come from the Registration page's summary and calendar. The calendar has no AM/PM,
+  so times are inferred (1-7 = PM, 8-11 = AM) and checked against each block's position on the calendar.
+
+Test pages in `frontend/src/extension/content/adapters/fixtures/` are trimmed from real UNCG pages with
+the student's name, email and classes removed or replaced.
 
 ## Planner features
 
@@ -57,7 +75,7 @@ A randomized test compares the search against a brute-force version on 500 rando
 ```bash
 cd frontend
 npm install
-npm test          # 66 tests
+npm test          # 84 tests
 npm run build     # creates frontend/dist, the extension
 npm run dev       # serves the made-up test pages at http://localhost:5173/demo/browse.html
 ```
@@ -93,6 +111,7 @@ TypeScript, React, Vite, Vitest, Chrome Extension Manifest V3.
 
 ## Not built yet
 
-- Adapters for real schools (waiting on saved pages)
+- UNCW and ECU (waiting on saved pages; both use Banner, so the UNCG reader may mostly carry over)
+- Banner's linked sections (a lecture that requires a specific lab)
 - Locking a section you must have
 - Comparing two schedules side by side
